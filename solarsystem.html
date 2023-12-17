@@ -1,0 +1,86 @@
+<canvas id="solarsystem" width="700" height="700"></canvas>
+<script>
+const canvas = document.getElementById("solarsystem");
+const m = canvas.getContext("2d");
+
+const drawCircle = (x, y, radius, color) => {
+    m.fillStyle = color;
+    m.beginPath();
+    m.arc(x, y, radius, 0, 2 * Math.PI);
+    m.fill();
+};
+
+const particles = [];
+const particle = (x, y, vx, vy, mass, color, radius) => {
+    return { "x": x, "y": y, "vx": vx, "vy": vy, "mass": mass, "color": color, "radius": radius };
+};
+
+const G = 0.001;
+const sunMass = 5000;
+
+const createSolarSystem = () => {
+    particles.push(particle(canvas.width / 2, canvas.height / 2, 0, 0, sunMass, "yellow", 30));
+
+    const planetData = [
+        { semiMajorAxis: 20, eccentricity: 0.2, mass: 30, color: "red", radius: 15 },
+        { semiMajorAxis: 40, eccentricity: 0.4, mass: 40, color: "green", radius: 12 },
+        { semiMajorAxis: 80, eccentricity: 0.6, mass: 50, color: "blue", radius: 10 },
+        { semiMajorAxis: 160, eccentricity: 0.8, mass: 60, color: "orange", radius: 8 },
+        { semiMajorAxis: 200, eccentricity: 0.5, mass: 70, color: "purple", radius: 6 },
+        { semiMajorAxis: 210, eccentricity: 0.7, mass: 80, color: "cyan", radius: 6 },
+        { semiMajorAxis: 220, eccentricity: 0.4, mass: 90, color: "pink", radius: 6 },
+        { semiMajorAxis: 300, eccentricity: 0.6, mass: 100, color: "brown", radius: 6 },
+        { semiMajorAxis: 400, eccentricity: 0.3, mass: 110, color: "gray", radius: 6 },
+    ];
+
+    for (let i = 0; i < planetData.length; i++) {
+        const angle = Math.random() * 2 * Math.PI;
+        const distance = planetData[i].semiMajorAxis * (1 - planetData[i].eccentricity * planetData[i].eccentricity) / (1 + planetData[i].eccentricity * Math.cos(angle));
+        const x = canvas.width / 2 + distance * Math.cos(angle);
+        const y = canvas.height / 2 + distance * Math.sin(angle);
+        const speed = Math.sqrt(G * sunMass * ((2 / distance) - (1 / planetData[i].semiMajorAxis)));
+        const vx = -speed * Math.sin(angle + Math.PI / 2);
+        const vy = speed * Math.cos(angle + Math.PI / 2);
+
+        particles.push(particle(x, y, vx, vy, planetData[i].mass, planetData[i].color, planetData[i].radius));
+    }
+};
+
+createSolarSystem();
+
+const rule = (particle1, particle2, dt) => {
+    const dx = particle2.x - particle1.x;
+    const dy = particle2.y - particle1.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const force = (G * particle1.mass * particle2.mass) / (distance * distance);
+    const fx = (force / distance) * dx;
+    const fy = (force / distance) * dy;
+
+    particle1.vx += fx / particle1.mass * dt;
+    particle1.vy += fy / particle1.mass * dt;
+    particle1.x += particle1.vx * dt;
+    particle1.y += particle1.vy * dt;
+};
+
+const update = () => {
+    m.fillStyle = "black";
+    m.fillRect(0, 0, canvas.width, canvas.height);
+
+    for (let i = 0; i < particles.length; i++) {
+        for (let j = 0; j < particles.length; j++) {
+            if (i !== j) {
+                rule(particles[i], particles[j], 0.1);
+            }
+        }
+
+        particles[i].x += particles[i].vx;
+        particles[i].y += particles[i].vy;
+
+        drawCircle(particles[i].x, particles[i].y, particles[i].radius, particles[i].color);
+    }
+
+    requestAnimationFrame(update);
+};
+
+update();
+</script>
